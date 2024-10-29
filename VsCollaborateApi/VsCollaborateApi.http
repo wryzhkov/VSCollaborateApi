@@ -1,0 +1,6 @@
+@VsCollaborateApi_HostAddress = http://localhost:5109
+
+GET {{VsCollaborateApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
