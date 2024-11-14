@@ -32,7 +32,7 @@ namespace VsCollaborateApi.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> CreateDocument([FromBody] CreateDocumentRequest createDocumentRequest)
         {
-            var user = _identityService.Authenticate(HttpContext);
+            var user = await _identityService.AuthenticateAsync(HttpContext);
 
             if (string.IsNullOrEmpty(createDocumentRequest.Name))
             {
@@ -49,7 +49,7 @@ namespace VsCollaborateApi.Controllers
             {
                 return BadRequest(ApiResponse.Fail("Cannot open a document over HTTP. Please, use WebSocket api instead"));
             }
-            var user = _identityService.Authenticate(HttpContext);
+            var user = await _identityService.AuthenticateAsync(HttpContext);
             var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null)

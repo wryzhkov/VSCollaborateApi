@@ -26,9 +26,9 @@ public partial class Program
         builder.Services.AddSingleton<IIdentityService, IdentityService>();
         builder.Services.AddSingleton<IDatabaseClient, DatabaseClient>((serviceProvider) =>
         {
-            var conifg = serviceProvider.GetService<IConfiguration>();
+            var config = serviceProvider.GetService<IConfiguration>();
 
-            return new DatabaseClient(conifg.GetConnectionString("database"));
+            return new DatabaseClient(config.GetConnectionString("database"));
         });
         build?.Invoke(builder);
         var app = builder.Build();

@@ -10,8 +10,16 @@ namespace VsCollaborateApi.Services
 
         Task<List<Document>> ListDocumentsAsync();
 
-        Task<Document?> FindDocumentsAsync(Guid id);
+        Task<Document?> FindDocumentAsync(Guid id);
 
         Task UpdateDocumentAsync(Document document);
+
+        Task<User?> FindUserAsync(string email);
+
+        Task<bool> CreateUser(User user, string passwordHash);
+
+        Task<bool> CheckPassword(string email, string passwordHash);
+
+        Task<string> GetPassword(User user);
     }
 }

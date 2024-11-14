@@ -1,4 +1,5 @@
 ﻿using Npgsql;
+using System.Xml.Linq;
 using VsCollaborateApi.Models;
 
 namespace VsCollaborateApi.Services
@@ -96,11 +97,9 @@ namespace VsCollaborateApi.Services
             var sql = "DELETE FROM document WHERE id = @id";
             using var cmd = new NpgsqlCommand(sql, connection);
             cmd.Parameters.AddWithValue("id", id);
-
-            await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task<Document?> FindDocumentsAsync(Guid id)
+        public async Task<Document?> FindDocumentAsync(Guid id)
         {
             using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
@@ -114,6 +113,78 @@ namespace VsCollaborateApi.Services
             if (reader.Read())
             {
                 return new Document(reader.GetGuid(0), reader.GetString(1), reader.GetString(2));
+            }
+
+            return null;
+        }
+
+        public async Task<User?> FindUserAsync(string email)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "SELECT email, name FROM users where email = @email LIMIT 1";
+            using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("email", email);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (reader.Read())
+            {
+                return new User(reader.GetString(0), reader.GetString(1));
+            }
+
+            return null;
+        }
+
+        public async Task<bool> CreateUser(User user, string passwordHash)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "INSERT INTO users (id, email, name, password) VALUES (@id, @email, @name, @password)";
+            using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("id", Guid.NewGuid());
+            cmd.Parameters.AddWithValue("email", user.Email);
+            cmd.Parameters.AddWithValue("name", user.Name);
+            cmd.Parameters.AddWithValue("password", passwordHash);
+
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+
+        public async Task<bool> CheckPassword(string email, string passwordHash)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "SELECT email FROM users where email = @email and password = @password LIMIT 1";
+            using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("email", email);
+            cmd.Parameters.AddWithValue("password", passwordHash);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (reader.Read())
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<string> GetPassword(User user)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "SELECT password FROM users where email = @email LIMIT 1";
+            using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("email", user.Email);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (reader.Read())
+            {
+                return reader.GetString(0);
             }
 
             return null;
