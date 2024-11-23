@@ -45,20 +45,26 @@ namespace VsCollaborateApi.Controllers
         [HttpGet("{id}/open")]
         public async Task<ActionResult<ApiResponse>> OpenDocument([FromRoute] string id)
         {
-            if (!HttpContext.WebSockets.IsWebSocketRequest)
+            try
             {
-                return BadRequest(ApiResponse.Fail("Cannot open a document over HTTP. Please, use WebSocket api instead"));
-            }
-            var user = await _identityService.AuthenticateAsync(HttpContext);
-            var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-            var document = await _documentService.GetDocumentAsync(id);
-            if (document == null)
+                if (!HttpContext.WebSockets.IsWebSocketRequest)
+                {
+                    return BadRequest(ApiResponse.Fail("Cannot open a document over HTTP. Please, use WebSocket api instead"));
+                }
+                var user = await _identityService.AuthenticateAsync(HttpContext);
+                var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                var document = await _documentService.GetDocumentAsync(id);
+                if (document == null)
+                {
+                    return NotFound(ApiResponse.Fail("Document not found"));
+                }
+                var session = _documentRedactionService.OpenDocument(document.Id, user, webSocket);
+                await session.WaitForEnd(user);
+                return Ok(ApiResponse.Ok("Edit session closed..."));
+            }catch(Exception e)
             {
-                return NotFound(ApiResponse.Fail("Document not found"));
+                throw e;
             }
-            var session = _documentRedactionService.OpenDocument(document.Id, user.Email, webSocket);
-            await session.WaitForEnd(user.Email);
-            return Ok(ApiResponse.Ok("Edit session closed..."));
         }
     }
 

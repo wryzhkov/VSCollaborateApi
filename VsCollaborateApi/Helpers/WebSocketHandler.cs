@@ -13,16 +13,16 @@ namespace VsCollaborateApi.Helpers
         private const int BUFFER_SIZE = 4 * 1024;
         private const int QUEUE_SLEEP_MS = 5000;
 
-        private readonly ConcurrentQueue<EditEventData> _messageQueue = new ConcurrentQueue<EditEventData>();
+        private readonly ConcurrentQueue<Message> _messageQueue = new ConcurrentQueue<Message>();
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         private WebSocket _webSocket;
-        private readonly string _user;
-        private ConcurrentQueue<EditEventData> _editEventsQueue;
+        private readonly User _user;
+        private ConcurrentQueue<Message> _editEventsQueue;
 
         public bool Active => !_cts.IsCancellationRequested;
 
-        public WebSocketHandler(WebSocket webSocket, string user, ConcurrentQueue<EditEventData> editEvents)
+        public WebSocketHandler(WebSocket webSocket, User user, ConcurrentQueue<Message> editEvents)
         {
             _webSocket = webSocket;
             _user = user;
@@ -56,24 +56,33 @@ namespace VsCollaborateApi.Helpers
                         {
                             Console.WriteLine("WebSocket closed by the server.");
                             _cts.Cancel(); // Signal to stop the tasks
-                            break;
+                            return;
                         }
 
                         message.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
                     } while (!result.EndOfMessage && !cancellationToken.IsCancellationRequested);
                     var renderedMessage = message.ToString();
-                    var editEvent = JsonSerializer.Deserialize<EditEventData>(renderedMessage);
-                    editEvent.UserId = _user;
+                    var editEvent = JsonSerializer.Deserialize<Message>(renderedMessage);
+                    editEvent.Session = _user.SessionId;
+                    editEvent.User = _user.Email;
 
                     _editEventsQueue.Enqueue(editEvent);
                     Console.WriteLine($"Received message: {renderedMessage}");
-                    message.Clear();
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error parsing message: {ex.Message}");
+                    AddMessage(new Message() { Id= "", User= "SYSTEM", Session= "SYSTEM", Data = new System.Text.Json.Nodes.JsonObject { ["message"]="Cannot parse json payload" } });
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error receiving message: {ex.Message}");
                     _cts.Cancel(); // Signal to stop the tasks
                     break;
+                }
+                finally
+                {
+                    message.Clear();
                 }
             }
         }
@@ -84,7 +93,7 @@ namespace VsCollaborateApi.Helpers
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                while (!_messageQueue.IsEmpty && _messageQueue.TryDequeue(out EditEventData? message))
+                while (!_messageQueue.IsEmpty && _messageQueue.TryDequeue(out Message? message))
                 {
                     try
                     {
@@ -110,7 +119,7 @@ namespace VsCollaborateApi.Helpers
             _webSocket.Dispose();
         }
 
-        public void AddMessage(EditEventData message)
+        public void AddMessage(Message message)
         {
             _messageQueue.Enqueue(message);
         }

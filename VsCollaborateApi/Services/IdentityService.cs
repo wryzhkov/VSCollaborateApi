@@ -52,6 +52,10 @@ namespace VsCollaborateApi.Services
 
             var userEmail = json["user"].ToString();
             var user = await _databaseClient.FindUserAsync(userEmail);
+            if (user != null)
+            {
+                user.SessionId = json["sessionId"].ToString();
+            }
             return user;
         }
 
@@ -93,26 +97,20 @@ namespace VsCollaborateApi.Services
                                   .WithSecret(key)
                                   .AddClaim("exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds())
                                   .AddClaim("user", email)
-                                  .AddClaim("sessionId", Guid.NewGuid())
+                                  .AddClaim("sessionId", Guid.NewGuid().ToString())
                                   .Encode();
             return token;
         }
 
         public string RefreshToken(User user)
         {
-            var payload = new Dictionary<string, object>
-            {
-                { "email", user.Email},
-                { "sessionId", Guid.NewGuid()}
-            };
-
             string key = JWT_KEY;
             var token = JwtBuilder.Create()
                                   .WithAlgorithm(new HMACSHA512Algorithm())
                                   .WithSecret(key)
                                   .AddClaim("exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds())
                                   .AddClaim("user", user.Email)
-                                  .AddClaim("sessionId", Guid.NewGuid())
+                                  .AddClaim("sessionId", user.SessionId)
                                   .Encode();
             return token;
         }

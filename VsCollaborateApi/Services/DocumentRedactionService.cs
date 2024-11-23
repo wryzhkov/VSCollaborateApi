@@ -16,7 +16,7 @@ namespace VsCollaborateApi.Services
         private ConcurrentDictionary<Guid, DocumentEditSession> _openedDocuments = new ConcurrentDictionary<Guid, DocumentEditSession>();
         private readonly IDocumentService _documentService;
 
-        public DocumentEditSession OpenDocument(Guid id, string user, WebSocket webSocket)
+        public DocumentEditSession OpenDocument(Guid id, User user, WebSocket webSocket)
         {
             var session = _openedDocuments.GetOrAdd(id, (id) => new DocumentEditSession(id));
             session.AddUser(user, webSocket);
@@ -29,9 +29,9 @@ namespace VsCollaborateApi.Services
     public class DocumentEditSession
     {
         private Guid _documentId;
-        private ConcurrentDictionary<string, WebSocketHandler> _users = new();
+        private ConcurrentDictionary<User, WebSocketHandler> _users = new();
 
-        private ConcurrentQueue<EditEventData> _userEditEventsQueue = new();
+        private ConcurrentQueue<Message> _userEditEventsQueue = new();
 
         private Task _eventReaderTask;
 
@@ -41,7 +41,7 @@ namespace VsCollaborateApi.Services
             _eventReaderTask = Task.Run(ProcessEventQueue);
         }
 
-        public void AddUser(string user, WebSocket webSocket)
+        public void AddUser(User user, WebSocket webSocket)
         {
             var handler = new WebSocketHandler(webSocket, user, _userEditEventsQueue);
             if (_users.ContainsKey(user))
@@ -60,11 +60,11 @@ namespace VsCollaborateApi.Services
         {
             do
             {
-                while (!_userEditEventsQueue.IsEmpty && _userEditEventsQueue.TryDequeue(out EditEventData? eventData))
+                while (!_userEditEventsQueue.IsEmpty && _userEditEventsQueue.TryDequeue(out Message? eventData))
                 {
                     foreach (var user in _users)
                     {
-                        if (user.Key != eventData.UserId)
+                        if (user.Key.SessionId != eventData.Session)
                         {
                             user.Value.AddMessage(eventData);
                         }
@@ -74,7 +74,7 @@ namespace VsCollaborateApi.Services
             } while (true);
         }
 
-        public Task WaitForEnd(string user)
+        public Task WaitForEnd(User user)
         {
             return Task.Run(async () =>
             {
