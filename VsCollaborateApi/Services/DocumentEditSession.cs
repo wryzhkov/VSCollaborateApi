@@ -118,7 +118,15 @@ namespace VsCollaborateApi.Services
             {
                 while (!_operationsQueue.IsEmpty && _operationsQueue.TryDequeue(out Operation? operation))
                 {
-                    var result = await _databaseClient.StoreDocumentOperation(_documentId, operation);
+                    try
+                    {
+                        var result = await _databaseClient.StoreDocumentOperation(_documentId, operation);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Exception during storing operation: " + ex);
+                        _operationsQueue.Enqueue(operation);
+                    }
                 }
                 await Task.Delay(200);
             } while (true);

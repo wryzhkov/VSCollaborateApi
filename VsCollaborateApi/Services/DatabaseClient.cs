@@ -199,6 +199,15 @@ namespace VsCollaborateApi.Services
             return null;
         }
 
+        private object DefaultToDbNull(object value)
+        {
+            if (value == null)
+            {
+                return DBNull.Value;
+            }
+            return value;
+        }
+
         public async Task<bool> StoreDocumentOperation(Guid documentId, Operation operation)
         {
             using var connection = new NpgsqlConnection(_connectionString);
@@ -210,7 +219,8 @@ namespace VsCollaborateApi.Services
             cmd.Parameters.AddWithValue("documentId", documentId);
             cmd.Parameters.AddWithValue("type", operation.Type);
             cmd.Parameters.AddWithValue("position", operation.Position);
-            cmd.Parameters.AddWithValue("text", operation.Char);
+
+            cmd.Parameters.AddWithValue("text", NpgsqlTypes.NpgsqlDbType.Text, DefaultToDbNull(operation.Char));
             cmd.Parameters.AddWithValue("operationId", operation.Id.AsString());
 
             return await cmd.ExecuteNonQueryAsync() > 0;
@@ -234,7 +244,7 @@ namespace VsCollaborateApi.Services
                 {
                     Type = reader.GetString(0),
                     Position = reader.GetInt32(1),
-                    Char = reader.GetString(2),
+                    Char = reader.IsDBNull(2) ? null : reader.GetString(2),
                     Id = RgaId.FromString(reader.GetString(3)),
                 });
             }

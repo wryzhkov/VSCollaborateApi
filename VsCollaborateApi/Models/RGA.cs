@@ -122,7 +122,7 @@ namespace VsCollaborateApi.Models
 
                 if (existingIndex >= 0)
                 {
-                    _text.RemoveAt(operation.Position);
+                    _text.RemoveAt(existingIndex);
                     OnOperationApplied?.Invoke(this, operation);
                 }
             }
@@ -133,7 +133,7 @@ namespace VsCollaborateApi.Models
             var stringBuilder = new StringBuilder();
             foreach (var c in _text)
             {
-                stringBuilder.Append(c.ToString());
+                stringBuilder.Append(c.Text.ToString());
             }
             return stringBuilder.ToString();
         }
@@ -150,10 +150,13 @@ namespace VsCollaborateApi.Models
 
         [JsonPropertyName("type")]
         public string Type { get; set; }
+
         [JsonPropertyName("id")]
         public RgaId Id { get; set; }
+
         [JsonPropertyName("position")]
         public int Position { get; set; }
+
         [JsonPropertyName("char")]
         public string Char { get; set; }
 

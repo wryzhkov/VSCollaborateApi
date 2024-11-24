@@ -1,3 +1,5 @@
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using VsCollaborateApi.Services;
 
 namespace VsCollaborateApi;
@@ -30,6 +32,24 @@ public partial class Program
 
             return new DatabaseClient(config.GetConnectionString("database"));
         });
+        var hostOptions = builder.Configuration.GetSection("HostOptions");
+
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            bool useLocalhost = hostOptions.GetValue<bool>("UseLocalhost");
+            int port = hostOptions.GetValue<int>("Port");
+
+            if (useLocalhost)
+            {
+                options.ListenLocalhost(port); // localhost:5000
+            }
+            else
+            {
+                string ipAddress = GetLocalIPAddress();
+                options.Listen(System.Net.IPAddress.Parse(ipAddress), port); // specified IP:5000
+            }
+        });
+
         build?.Invoke(builder);
         var app = builder.Build();
 
@@ -43,5 +63,25 @@ public partial class Program
 
         app.MapControllers();
         return app;
+    }
+
+    private static string GetLocalIPAddress()
+    {
+        // Iterate through network interfaces to find a valid IPv4 address
+        foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (networkInterface.OperationalStatus == OperationalStatus.Up &&
+                networkInterface.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+            {
+                foreach (UnicastIPAddressInformation ip in networkInterface.GetIPProperties().UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        return ip.Address.ToString(); // Return the first valid IPv4 address
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
