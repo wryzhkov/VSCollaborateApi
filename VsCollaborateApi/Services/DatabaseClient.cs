@@ -1,5 +1,5 @@
-﻿using Npgsql;
-using System.Xml.Linq;
+﻿using Microsoft.AspNetCore.Identity;
+using Npgsql;
 using VsCollaborateApi.Models;
 
 namespace VsCollaborateApi.Services
@@ -30,6 +30,15 @@ namespace VsCollaborateApi.Services
                 	name varchar(100),
                 	email varchar(100) unique,
                 	password varchar(100)
+                );
+
+                create table if not exists document_operation(
+                	id uuid primary key,
+                    document_id uuid,
+                    type varchar(32),
+                    position int,
+                    text varchar(100),
+                    operation_id varchar(64)
                 );
 
                 """;
@@ -188,6 +197,49 @@ namespace VsCollaborateApi.Services
             }
 
             return null;
+        }
+
+        public async Task<bool> StoreDocumentOperation(Guid documentId, Operation operation)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "INSERT INTO document_operation (id, document_id, type, position, text, operation_id) VALUES (@id, @documentId, @type, @position, @text, @operationId)";
+            using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("id", Guid.NewGuid());
+            cmd.Parameters.AddWithValue("documentId", documentId);
+            cmd.Parameters.AddWithValue("type", operation.Type);
+            cmd.Parameters.AddWithValue("position", operation.Position);
+            cmd.Parameters.AddWithValue("text", operation.Char);
+            cmd.Parameters.AddWithValue("operationId", operation.Id.AsString());
+
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+
+        public async Task<IEnumerable<Operation>> GetDocumentOperations(Guid documentId)
+        {
+            var result = new List<Operation>();
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = "SELECT type, position, text, operation_id FROM document_operation where document_Id = @docId ";
+            using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("docId", documentId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (reader.Read())
+            {
+                result.Add(new Operation
+                {
+                    Type = reader.GetString(0),
+                    Position = reader.GetInt32(1),
+                    Char = reader.GetString(2),
+                    Id = RgaId.FromString(reader.GetString(3)),
+                });
+            }
+
+            return result;
         }
     }
 }

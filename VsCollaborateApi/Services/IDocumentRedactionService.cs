@@ -6,6 +6,6 @@ namespace VsCollaborateApi.Services
 {
     public interface IDocumentRedactionService
     {
-        DocumentEditSession OpenDocument(Guid id, User user, WebSocket webSocket);
+        Task<DocumentEditSession> OpenDocument(Guid id, User user, WebSocket webSocket);
     }
 }

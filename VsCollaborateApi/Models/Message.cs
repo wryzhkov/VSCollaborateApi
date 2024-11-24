@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json;
 
 namespace VsCollaborateApi.Models
 {
@@ -8,14 +7,16 @@ namespace VsCollaborateApi.Models
         public string User { get; set; }
         public string Session { get; set; }
         public string Id { get; set; }
+        public string ResponseType { get; set; }
         public MessageType Type { get; set; }
 
-        public JsonObject Data { get; set; }
+        public JsonDocument Data { get; set; }
     }
 
     public enum MessageType
     {
         Event = 0,
-        Request = 1
+        Request = 1,
+        Response = 2
     }
 }

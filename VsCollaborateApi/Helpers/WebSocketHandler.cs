@@ -72,7 +72,7 @@ namespace VsCollaborateApi.Helpers
                 catch (JsonException ex)
                 {
                     Console.WriteLine($"Error parsing message: {ex.Message}");
-                    AddMessage(new Message() { Id= "", User= "SYSTEM", Session= "SYSTEM", Data = new System.Text.Json.Nodes.JsonObject { ["message"]="Cannot parse json payload" } });
+                    AddMessage(new Message() { Id = "", User = "SYSTEM", Session = "SYSTEM", Data = JsonSerializer.SerializeToDocument(new System.Text.Json.Nodes.JsonObject { ["message"] = "Cannot parse json payload" }) });
                 }
                 catch (Exception ex)
                 {

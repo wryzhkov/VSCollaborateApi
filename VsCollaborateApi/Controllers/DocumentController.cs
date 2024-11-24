@@ -58,10 +58,11 @@ namespace VsCollaborateApi.Controllers
                 {
                     return NotFound(ApiResponse.Fail("Document not found"));
                 }
-                var session = _documentRedactionService.OpenDocument(document.Id, user, webSocket);
+                var session = await _documentRedactionService.OpenDocument(document.Id, user, webSocket);
                 await session.WaitForEnd(user);
                 return Ok(ApiResponse.Ok("Edit session closed..."));
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 throw e;
             }

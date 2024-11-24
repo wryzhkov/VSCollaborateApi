@@ -21,5 +21,9 @@ namespace VsCollaborateApi.Services
         Task<bool> CheckPassword(string email, string passwordHash);
 
         Task<string> GetPassword(User user);
+
+        Task<bool> StoreDocumentOperation(Guid documentId, Operation operation);
+
+        Task<IEnumerable<Operation>> GetDocumentOperations(Guid documentId);
     }
 }
