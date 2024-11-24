@@ -11,7 +11,7 @@ namespace VsCollaborateApi.Helpers
     public class WebSocketHandler : IDisposable
     {
         private const int BUFFER_SIZE = 4 * 1024;
-        private const int QUEUE_SLEEP_MS = 5000;
+        private const int QUEUE_SLEEP_MS = 250;
 
         private readonly ConcurrentQueue<Message> _messageQueue = new ConcurrentQueue<Message>();
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
