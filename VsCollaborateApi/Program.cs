@@ -41,12 +41,12 @@ public partial class Program
 
             if (useLocalhost)
             {
-                options.ListenLocalhost(port); // localhost:5000
+                options.ListenLocalhost(port);
             }
             else
             {
                 string ipAddress = GetLocalIPAddress();
-                options.Listen(System.Net.IPAddress.Parse(ipAddress), port); // specified IP:5000
+                options.Listen(System.Net.IPAddress.Parse(ipAddress), port);
             }
         });
 

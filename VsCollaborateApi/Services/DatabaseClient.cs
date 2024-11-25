@@ -33,14 +33,14 @@ namespace VsCollaborateApi.Services
                 );
 
                 create table if not exists document_operation(
-                	id uuid primary key,
+                	id serial primary key,
                     document_id uuid,
                     type varchar(32),
                     position int,
                     text varchar(100),
                     operation_id varchar(64)
                 );
-
+                create index if not exists document_operation_doc_id on  document_operation (document_id);
                 """;
 
             using var cmd = new NpgsqlCommand(sql, connection);
@@ -213,9 +213,8 @@ namespace VsCollaborateApi.Services
             using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            var sql = "INSERT INTO document_operation (id, document_id, type, position, text, operation_id) VALUES (@id, @documentId, @type, @position, @text, @operationId)";
+            var sql = "INSERT INTO document_operation (document_id, type, position, text, operation_id) VALUES (@documentId, @type, @position, @text, @operationId)";
             using var cmd = new NpgsqlCommand(sql, connection);
-            cmd.Parameters.AddWithValue("id", Guid.NewGuid());
             cmd.Parameters.AddWithValue("documentId", documentId);
             cmd.Parameters.AddWithValue("type", operation.Type);
             cmd.Parameters.AddWithValue("position", operation.Position);
@@ -232,7 +231,7 @@ namespace VsCollaborateApi.Services
             using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            var sql = "SELECT type, position, text, operation_id FROM document_operation where document_Id = @docId ";
+            var sql = "SELECT type, position, text, operation_id FROM document_operation where document_Id = @docId order by id asc ";
             using var cmd = new NpgsqlCommand(sql, connection);
             cmd.Parameters.AddWithValue("docId", documentId);
 

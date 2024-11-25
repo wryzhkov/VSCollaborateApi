@@ -64,6 +64,7 @@ namespace VsCollaborateApi.Services
                 }
 
                 _replica.OnOperationApplied += _replica_OnOperationApplied;
+                _initialized = true;
             }
         }
 
