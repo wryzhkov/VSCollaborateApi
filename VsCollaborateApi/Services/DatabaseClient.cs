@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Npgsql;
 using VsCollaborateApi.Models;
+using VsCollaborateApi.Models.RGA;
 
 namespace VsCollaborateApi.Services
 {
@@ -36,7 +37,7 @@ namespace VsCollaborateApi.Services
                 	id serial primary key,
                     document_id uuid,
                     type varchar(32),
-                    position int,
+                    position varchar(64),
                     text varchar(100),
                     operation_id varchar(64)
                 );
@@ -208,7 +209,7 @@ namespace VsCollaborateApi.Services
             return value;
         }
 
-        public async Task<bool> StoreDocumentOperation(Guid documentId, Operation operation)
+        public async Task<bool> StoreDocumentOperation(Guid documentId, RgaOperation operation)
         {
             using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
@@ -217,7 +218,7 @@ namespace VsCollaborateApi.Services
             using var cmd = new NpgsqlCommand(sql, connection);
             cmd.Parameters.AddWithValue("documentId", documentId);
             cmd.Parameters.AddWithValue("type", operation.Type);
-            cmd.Parameters.AddWithValue("position", operation.Position);
+            cmd.Parameters.AddWithValue("position", operation.Position.AsString());
 
             cmd.Parameters.AddWithValue("text", NpgsqlTypes.NpgsqlDbType.Text, DefaultToDbNull(operation.Char));
             cmd.Parameters.AddWithValue("operationId", operation.Id.AsString());
@@ -225,9 +226,9 @@ namespace VsCollaborateApi.Services
             return await cmd.ExecuteNonQueryAsync() > 0;
         }
 
-        public async Task<IEnumerable<Operation>> GetDocumentOperations(Guid documentId)
+        public async Task<IEnumerable<RgaOperation>> GetDocumentOperations(Guid documentId)
         {
-            var result = new List<Operation>();
+            var result = new List<RgaOperation>();
             using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
 
@@ -239,12 +240,12 @@ namespace VsCollaborateApi.Services
 
             while (reader.Read())
             {
-                result.Add(new Operation
+                result.Add(new RgaOperation
                 {
                     Type = reader.GetString(0),
-                    Position = reader.GetInt32(1),
+                    Position = RgaId.FromString(reader.GetString(1)),
                     Char = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    Id = RgaId.FromString(reader.GetString(3)),
+                    Id = RgaId.FromString(reader.GetString(3))
                 });
             }
 

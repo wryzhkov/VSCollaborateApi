@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Text.Json;
 using VsCollaborateApi.Helpers;
 using VsCollaborateApi.Models;
+using VsCollaborateApi.Models.RGA;
 
 namespace VsCollaborateApi.Services
 {
@@ -20,7 +21,7 @@ namespace VsCollaborateApi.Services
 
         private ConcurrentQueue<Message> _userEditEventsQueue = new();
 
-        private ConcurrentQueue<Operation> _operationsQueue = new();
+        private ConcurrentQueue<RgaOperation> _operationsQueue = new();
         private ConcurrentQueue<Message> _incomingOperationsQueue = new();
 
         private Task _eventReaderTask;
@@ -62,13 +63,14 @@ namespace VsCollaborateApi.Services
                 {
                     _replica.ReceiveNetworkEvent(operation);
                 }
+                Console.WriteLine("RGA initial state: " + _replica.GetText());
 
                 _replica.OnOperationApplied += _replica_OnOperationApplied;
                 _initialized = true;
             }
         }
 
-        private void _replica_OnOperationApplied(object? sender, Operation e)
+        private void _replica_OnOperationApplied(object? sender, RgaOperation e)
         {
             _operationsQueue.Enqueue(e);
         }
@@ -117,7 +119,7 @@ namespace VsCollaborateApi.Services
         {
             do
             {
-                while (!_operationsQueue.IsEmpty && _operationsQueue.TryDequeue(out Operation? operation))
+                while (!_operationsQueue.IsEmpty && _operationsQueue.TryDequeue(out RgaOperation? operation))
                 {
                     try
                     {
@@ -141,7 +143,7 @@ namespace VsCollaborateApi.Services
                 {
                     try
                     {
-                        var operation = message.Data.Deserialize<Operation>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        var operation = message.Data.Deserialize<RgaOperation>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (operation != null && operation.Type != null)
                         {
                             _replica.ReceiveNetworkEvent(operation);

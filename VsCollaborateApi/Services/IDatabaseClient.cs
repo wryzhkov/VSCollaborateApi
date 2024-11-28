@@ -1,4 +1,5 @@
 ﻿using VsCollaborateApi.Models;
+using VsCollaborateApi.Models.RGA;
 
 namespace VsCollaborateApi.Services
 {
@@ -22,8 +23,8 @@ namespace VsCollaborateApi.Services
 
         Task<string> GetPassword(User user);
 
-        Task<bool> StoreDocumentOperation(Guid documentId, Operation operation);
+        Task<bool> StoreDocumentOperation(Guid documentId, RgaOperation operation);
 
-        Task<IEnumerable<Operation>> GetDocumentOperations(Guid documentId);
+        Task<IEnumerable<RgaOperation>> GetDocumentOperations(Guid documentId);
     }
 }
